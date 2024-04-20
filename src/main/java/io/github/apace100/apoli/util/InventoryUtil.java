@@ -357,10 +357,15 @@ public class InventoryUtil {
     }
 
     public static void forEachStack(Entity entity, Consumer<ItemStack> itemStackConsumer) {
-        Set<Integer> slots = Sets.newHashSet(ItemSlotArgumentTypeAccessor.getSlotMappings().values());
-        deduplicateSlots(entity, slots);
+        // backported from d391b2b
+        int skip = getDuplicatedSlotIndex(entity);
 
-        for(int slot : slots) {
+        for(int slot : ItemSlotArgumentTypeAccessor.getSlotMappings().values()) {
+            if(slot == skip) {
+                skip = Integer.MIN_VALUE;
+                continue;
+            }
+
             StackReference stackReference = entity.getStackReference(slot);
             if (stackReference == StackReference.EMPTY) continue;
 
@@ -386,13 +391,20 @@ public class InventoryUtil {
     }
 
     private static void deduplicateSlots(Entity entity, Set<Integer> slots) {
+        // backported from d391b2b
+        int hotbarSlot = getDuplicatedSlotIndex(entity);
+        if(hotbarSlot != Integer.MIN_VALUE && slots.contains(hotbarSlot)) {
+            Integer mainHandSlot = ItemSlotArgumentTypeAccessor.getSlotMappings().get("weapon.mainhand");
+            slots.remove(mainHandSlot);
+        }
+    }
+
+    private static int getDuplicatedSlotIndex(Entity entity) {
+        // backported from d391b2b
         if(entity instanceof PlayerEntity player) {
             int selectedSlot = player.getInventory().selectedSlot;
-            Integer hotbarSlot = ItemSlotArgumentTypeAccessor.getSlotMappings().get("hotbar." + selectedSlot);
-            if(slots.contains(hotbarSlot)) {
-                Integer mainHandSlot = ItemSlotArgumentTypeAccessor.getSlotMappings().get("weapon.mainhand");
-                slots.remove(mainHandSlot);
-            }
+            return ItemSlotArgumentTypeAccessor.getSlotMappings().get("hotbar." + selectedSlot);
         }
+        return Integer.MIN_VALUE;
     }
 }
