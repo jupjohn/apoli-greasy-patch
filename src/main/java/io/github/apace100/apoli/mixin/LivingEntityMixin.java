@@ -508,6 +508,12 @@ public abstract class LivingEntityMixin extends Entity implements ModifiableFood
 
     @Inject(method = "baseTick", at = @At("TAIL"))
     private void updateItemStackHolder(CallbackInfo ci) {
+        // early out, don't need to have this run on mobs etc.
+        LivingEntity thisAsLiving = (LivingEntity) (Object) this;
+        if (!(thisAsLiving instanceof PlayerEntity)) {
+            return;
+        }
+
         InventoryUtil.forEachStack(this, stack -> stack.setHolder(this));
     }
 }
